@@ -11,8 +11,9 @@ export default class MyDocument extends Document {
       <html>
         <Head>
           <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-          <script src="https://d3js.org/d3.v5.min.js"></script>
-          <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+          <script src="https://d3js.org/d3.v3.min.js"></script>
+          <script src="http://d3js.org/queue.v1.min.js"></script>
+          <script src="https://unpkg.com/topojson-client@3"></script>
         </Head>
         <body className="custom_class">
           <Main />
