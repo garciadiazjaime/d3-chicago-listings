@@ -1,71 +1,16 @@
 import React, { Component } from 'react'
 import Head from 'next/head'
 
-
 export default class extends Component {
 
   constructor(props) {
     super(props)
     this.state = {}
   }
-  
-  componentDidMount() {
-    console.log('componentDidMount')
-    // const priceByZipCode = {}
-    // d3.csv('/static/1BD_Listing_Chicago_Zip.csv')
-    //   .then(data => {
-    //     Object.keys(data).forEach(key => {
-    //       let zipCode = ''
-    //       let prices = []
-    //       if (!isNaN(key)) {
-    //         Object.keys(data[key]).forEach(date => {
-    //           if (date === 'Zip Code') {
-    //             zipCode = data[key][date]
-    //           } else {
-    //             prices.push({
-    //               date,
-    //               price: data[key][date]
-    //             })
-    //           }
-    //         })
-    //         priceByZipCode[zipCode] = prices
-    //       }
-    //     })
-    //     const zipCodes = Object.keys(priceByZipCode)
 
-    //     d3.select('#data')
-    //       .selectAll('p')
-    //       .data(zipCodes)
-    //       .enter().append('p')
-    //       .text(zipCode => {
-    //         return `${zipCode}: ${JSON.stringify(priceByZipCode[zipCode][0])}`
-    //       })
-
-    //     this.setState({
-    //       priceByZipCode
-    //     })
-    //   })
-
-    // let svg = svg = d3.select('svg')
+  renderMap(data, priceByZipCode) {
     let svg = svg = d3.select('svg')
     const path = d3.geo.path()
-    // const path = d3.geoPath()
-
-    // queue()
-    //   .defer(d3.json, '/static/10m.json')
-    //   .await((error, data) => {
-    //     console.log('data', data)
-    //     // svg.append('path')
-    //     //   .attr('stroke', '#aaa')
-    //     //   .attr('stroke-width', 0.5)
-    //     //   .attr('d', path(topojson.mesh(data, data.objects.states)))
-        
-    //     // svg.append('path')
-    //     //   .attr('stroke', '#aaa')
-    //     //   .attr('stroke-width', 0.5)
-    //     //   .attr('d', path(topojson.mesh(data, data.objects.counties)))
-    //   })
-
     const expectedZipCodes = [
       '60622',
       '60640',
@@ -99,34 +44,89 @@ export default class extends Component {
       '60202'
     ]
 
+    const toolTipStyle = {
+      position: 'absolute',
+      textAlign: 'center',
+      width: '60px',
+      height: '28px',
+      padding: '2px',
+      font: '12px sans-serif',
+      background: 'lightsteelblue',
+      border: '0px',
+      borderRadius: '8px',
+      pointerEvents: 'non'
+    }
+
+    const div = d3.select('body')
+      .append('div')
+      .attr('class', 'tooltip')
+      .style('opacity', 0)
+      .style(toolTipStyle)
+
+    const geometries = data.objects.data.geometries.filter(item => expectedZipCodes.includes(item.properties.ZCTA5CE10))
+    const newData = Object.assign({}, data)
+    newData.objects.data.geometries = geometries
+    svg
+      .attr('viewBox', '602 181 1 6')
+      .attr('width', 600)
+      .attr('height', 600)
+      .selectAll('path')
+      .data(topojson.feature(data, data.objects.data).features)
+      .enter()
+      .append('path')
+      .attr('stroke', '#666')
+      .attr('stroke-width', 0.02)
+      .attr('fill', 'red')
+      .attr('pointer-events', 'all')
+      .attr('data-zip', d => d.properties.ZCTA5CE10)
+      .attr('d', path)
+      .on('mouseover', (d) => {
+        const price = priceByZipCode[d.properties.ZCTA5CE10][0].price
+        const zipCode = d.properties.ZCTA5CE10
+        div.transition()
+          .duration(200)
+          .style('opacity', .9);
+        div.html(`${zipCode} \n ${price}`)
+          .style('left', (d3.event.pageX) + 'px')
+          .style('top', (d3.event.pageY - 28) + 'px');
+      })
+      .on('mouseout', (d) => {
+        div.transition()
+            .duration(500)
+            .style('opacity', 0);
+      })
+  }
+
+  getPriceByZipCode(data) {
+    const priceByZipCode = {}
+    Object.keys(data).forEach(key => {
+      let zipCode = ''
+      let prices = []
+      if (!isNaN(key)) {
+        Object.keys(data[key]).forEach(date => {
+          if (date === 'Zip Code') {
+            zipCode = data[key][date]
+          } else {
+            prices.push({
+              date,
+              price: data[key][date]
+            })
+          }
+        })
+        priceByZipCode[zipCode] = prices
+      }
+    })
+    return priceByZipCode
+  }
+
+  componentDidMount() {
+    console.log('componentDidMount')
     queue()
+      .defer(d3.csv, '/static/1BD_Listing_Chicago_Zip.csv')
       .defer(d3.json, '/static/data.topo.json')
-      .await((error, data) => {
-        const geometries = data.objects.data.geometries.filter(item => expectedZipCodes.includes(item.properties.ZCTA5CE10))
-        const newData = Object.assign({}, data)
-        newData.objects.data.geometries = geometries
-        svg
-          .attr("viewBox", "602 181 1 6")
-          .attr("width", 600)
-          .attr("height", 600)
-          .append("g")
-          .attr("class", "counties")
-          .selectAll('path')
-          .data(topojson.feature(data, data.objects.data).features)
-          .enter()
-          .append('path')
-          .attr('stroke', '#666')
-          .attr('stroke-width', 0.02)
-          .attr('fill', 'none')
-          .attr("class", "zip")
-          .attr("data-zip", d => d.properties.ZCTA5CE10)
-          .attr('d', path)
-          .on("mouseover", (d) => {
-            console.log('mouseover')
-          })
-          .on("mouseout", (d) => {
-            console.log('mouseout', d)
-          })
+      .await((error, prices, zips) => {
+          const priceByZipCode = this.getPriceByZipCode(prices)
+          this.renderMap(zips, priceByZipCode)
       })
   }
 
