@@ -66,23 +66,57 @@ export default class extends Component {
     //     //   .attr('d', path(topojson.mesh(data, data.objects.counties)))
     //   })
 
+    const expectedZipCodes = [
+      '60622',
+      '60640',
+      '60611',
+      '60631',
+      '60657',
+      '60659',
+      '60605',
+      '60601',
+      '60614',
+      '60654',
+      '60625',
+      '60626',
+      '60661',
+      '60613',
+      '60615',
+      '60656',
+      '60630',
+      '60647',
+      '60610',
+      '60642',
+      '60634',
+      '60660',
+      '60618',
+      '60641',
+      '60645',
+      '60607',
+      '60606',
+      '60616',
+      '60201',
+      '60202'
+    ]
+
     queue()
-      .defer(d3.json, '/static/zips.json')
+      .defer(d3.json, '/static/data.geo.json')
       .await((error, data) => {
-        console.log('data', topojson)
-        svg.append('g')
+        const features = data.features.filter(item => expectedZipCodes.includes(item.properties.ZCTA5CE10))
+        const newData = {
+          ...data,
+          features
+        }
+        svg
+          .attr("viewBox", "602 181 1 6")
+          .attr("width", 600)
+          .attr("height", 600)
           .selectAll('path')
-          .data(
-            topojson
-            // .filter(data, item => {
-            //   console.log('here', item)
-            //   return true
-            // })
-            .feature(data, data.objects.zip_codes_for_the_usa).features
-          )
-          .enter().append('path')
-          .attr('stroke', '#aaa')
-          .attr('stroke-width', 0.5)
+          .data(newData.features)
+          .enter()
+          .append('path')
+          .attr('stroke', '#666')
+          .attr('stroke-width', 0.02)
           .attr('fill', 'none')
           .attr('d', path)
       })
@@ -98,7 +132,7 @@ export default class extends Component {
         </Head>
         <h1>Welcome to next.js!</h1>
         <div id='data'></div>
-        <svg width="960" height="600" fill="none" stroke="#000" strokeLinejoin="round" strokeLinecap="round"></svg>
+        <svg></svg>
       </div>
     )
   }
