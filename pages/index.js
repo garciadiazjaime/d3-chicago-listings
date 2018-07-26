@@ -100,25 +100,33 @@ export default class extends Component {
     ]
 
     queue()
-      .defer(d3.json, '/static/data.geo.json')
+      .defer(d3.json, '/static/data.topo.json')
       .await((error, data) => {
-        const features = data.features.filter(item => expectedZipCodes.includes(item.properties.ZCTA5CE10))
-        const newData = {
-          ...data,
-          features
-        }
+        const geometries = data.objects.data.geometries.filter(item => expectedZipCodes.includes(item.properties.ZCTA5CE10))
+        const newData = Object.assign({}, data)
+        newData.objects.data.geometries = geometries
         svg
           .attr("viewBox", "602 181 1 6")
           .attr("width", 600)
           .attr("height", 600)
+          .append("g")
+          .attr("class", "counties")
           .selectAll('path')
-          .data(newData.features)
+          .data(topojson.feature(data, data.objects.data).features)
           .enter()
           .append('path')
           .attr('stroke', '#666')
           .attr('stroke-width', 0.02)
           .attr('fill', 'none')
+          .attr("class", "zip")
+          .attr("data-zip", d => d.properties.ZCTA5CE10)
           .attr('d', path)
+          .on("mouseover", (d) => {
+            console.log('mouseover')
+          })
+          .on("mouseout", (d) => {
+            console.log('mouseout', d)
+          })
       })
   }
 
