@@ -2,6 +2,8 @@ import React, { Component } from 'react'
 import Head from 'next/head'
 import { expectedZipCodes } from '../config/base'
 
+let interval = null
+
 const toolTipStyle = {
   background: '#222',
   border: '0px',
@@ -114,13 +116,24 @@ function onTooltipHover(d, pricesByDate) {
 function onTooltipOut() {
   d3.select('#tooltip')
     .transition()
-    .duration(500)
+    .duration(100)
     .style('opacity', 0);
 }
 
 function getFirstDate(zipCodePrices) {
   const firstZipCode = Object.keys(zipCodePrices)[0]
   return zipCodePrices[firstZipCode][0].date
+}
+
+function getDates(zipCodePrices) {
+  const firstZipCode = Object.keys(zipCodePrices)[0]
+  return zipCodePrices[firstZipCode].map(item => item.date)
+}
+
+function getNextDate(dates, date) {
+  const currentIndex = dates.findIndex(item => item === date)
+  const nextIndex = currentIndex && dates.length - 1 === currentIndex ? 0 : currentIndex + 1
+  return dates[nextIndex || 0]
 }
 
 export default class extends Component {
@@ -202,11 +215,12 @@ export default class extends Component {
     })
   }
 
-  renderDates() {
+  renderDates(date) {
     const { dates } = this.state
-    if (dates && dates.length) {
+    if (date && dates && dates.length) {
       return (
-        <select onChange={(event) => this.onDateChange(event.target.value)} style={{ margin: '0 0 0 15px' }}>
+        <select value={date} onChange={(event) => this.onDateChange(event.target.value)}
+          style={{ margin: '0 0 0 15px', fontSize: '20px' }}>
           { dates.map(item => (<option value={item} key={item}>{item}</option>))}
         </select>
       )
@@ -214,18 +228,38 @@ export default class extends Component {
     return null
   }
 
+  onAnimationStartClickHanlder() {
+    if (!interval) {
+      interval = setInterval(() => {
+        const { date, priceByZipCode } = this.state
+        const dates = getDates(priceByZipCode)
+        const nextDate = getNextDate(dates, date)
+        this.onDateChange(nextDate)
+      }, 100)
+    }
+  }
+
+  onAnimationStopClickHanlder() {
+    clearInterval(interval)
+    interval = null
+  }
+
   render() {
-    const { date } = this.state
+    const { date, priceByZipCode } = this.state
     return (
       <div>
         <Head>
-          <title>Chicago House Prices</title>
+          <title>Chicago House Prices (last 10 years)</title>
         </Head>
-        <h1>Chicago House Prices { date }</h1>
-        <div>
+        <h1>Chicago House Prices, <small>last 10 years.</small></h1>
+        <div style={{ display: 'flex', alignItems: 'center', margin: '0 0 15px 0' }}>
           <span style={mostAffordable} /> Most Affordable
           <span style={mostExpensive} /> Most Expensive
-          {this.renderDates()}
+          {this.renderDates(date)}
+        </div>
+        <div>
+          <button onClick={this.onAnimationStartClickHanlder.bind(this)}>Start Animation</button>
+          <button onClick={this.onAnimationStopClickHanlder.bind(this)}>Stop Animation</button>
         </div>
         <svg></svg>
         <div id="tooltip"></div>
