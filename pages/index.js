@@ -81,7 +81,7 @@ function updatePricesForDate(pricesByDate) {
 
 function onTooltipHover(d, pricesByDate) {
   const zipCode = d.properties.ZCTA5CE10
-  const price = pricesByDate[d.properties.ZCTA5CE10].price
+  const price = parseInt(pricesByDate[d.properties.ZCTA5CE10].price)
   const div = d3.select('#tooltip')
       .style('opacity', 0)
       .style(toolTipStyle)
@@ -89,7 +89,7 @@ function onTooltipHover(d, pricesByDate) {
   div.transition()
     .duration(200)
     .style('opacity', .8);
-  div.html(`${zipCode} <br /> $${parseInt(price).toLocaleString()}`)
+  div.html(`${zipCode} ${price && `<br /> $${price.toLocaleString()}` || ''}`)
     .style('left', (d3.event.pageX) + 'px')
     .style('top', (d3.event.pageY - 28) + 'px');
 }
