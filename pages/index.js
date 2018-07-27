@@ -31,6 +31,65 @@ function getPriceRange(pricesByDate) {
   return prices
 }
 
+function getDatesFromZipCodes(zipCodes) {
+  const firstKey = Object.keys(zipCodes)[0]
+  return zipCodes[firstKey].map(item => item.date)
+}
+
+function getColorRange(pricesByDate) {
+  return d3.scale.linear()
+        .domain(getPriceRange(pricesByDate))
+        .interpolate(d3.interpolateHcl)
+        .range([d3.rgb("#8bace5"), d3.rgb('#f44646')])
+}
+
+function updatePricesForDate(pricesByDate) {
+  const colors = getColorRange(pricesByDate)
+  d3
+    .selectAll("path")
+    .attr("fill", d => {
+      const zipCode = d.properties.ZCTA5CE10
+      const price = pricesByDate[zipCode].price
+      return colors(pricesByDate[zipCode].price)
+    })
+    .on('mouseover', d => onTooltipHover(d, pricesByDate))
+}
+
+function onTooltipHover(d, zipCodePricesByDate) {
+  const zipCode = d.properties.ZCTA5CE10
+  const price = zipCodePricesByDate[d.properties.ZCTA5CE10] ? zipCodePricesByDate[d.properties.ZCTA5CE10].price : 0
+
+  const toolTipStyle = {
+    background: '#222',
+    border: '0px',
+    color: '#FFF',
+    font: '14px sans-serif',
+    fontWeight: 'bold',
+    padding: '5px',
+    pointerEvents: 'non',
+    position: 'absolute'
+  }
+
+  const div = d3.select('#tooltip')
+      .style('opacity', 0)
+      .style('text-align', 'center')
+      .style(toolTipStyle)
+
+  div.transition()
+    .duration(200)
+    .style('opacity', .8);
+  div.html(`${zipCode} <br /> $${parseInt(price).toLocaleString()}`)
+    .style('left', (d3.event.pageX) + 'px')
+    .style('top', (d3.event.pageY - 28) + 'px');
+}
+
+function onTooltipOut() {
+  d3.select('#tooltip')
+    .transition()
+    .duration(500)
+    .style('opacity', 0);
+}
+
 export default class extends Component {
 
   constructor(props) {
@@ -38,34 +97,13 @@ export default class extends Component {
     this.state = {}
   }
 
-  renderMap(data = [], priceByZipCode = {}, date = '') {
-    const newData = getExpectedZipCodes(data, expectedZipCodes)
+  renderMap(zipCodes = [], priceByZipCode = {}, date = '') {
+    const newData = getExpectedZipCodes(zipCodes, expectedZipCodes)
     const zipCodePricesByDate = getZipCodePricesFrom(priceByZipCode, date)
 
     let svg = svg = d3.select('svg')
     const path = d3.geo.path()
-
-    const toolTipStyle = {
-      background: '#222',
-      border: '0px',
-      color: '#FFF',
-      font: '14px sans-serif',
-      fontWeight: 'bold',
-      padding: '5px',
-      pointerEvents: 'non',
-      position: 'absolute'
-    }
-
-    const div = d3.select('body')
-      .append('div')
-      .style('opacity', 0)
-      .style('text-align', 'center')
-      .style(toolTipStyle)
-
-    const colors = d3.scale.linear()
-        .domain(getPriceRange(zipCodePricesByDate))
-        .interpolate(d3.interpolateHcl)
-        .range([d3.rgb("#8bace5"), d3.rgb('#f44646')])
+    const colors = getColorRange(zipCodePricesByDate)
 
     svg
       .attr('viewBox', '602 181 1 6')
@@ -83,21 +121,7 @@ export default class extends Component {
       })
       .attr('pointer-events', 'all')
       .attr('d', path)
-      .on('mouseover', d => {
-        const zipCode = d.properties.ZCTA5CE10
-        const price = zipCodePricesByDate[d.properties.ZCTA5CE10] ? zipCodePricesByDate[d.properties.ZCTA5CE10].price : 0
-        div.transition()
-          .duration(200)
-          .style('opacity', .8);
-        div.html(`${zipCode} <br /> $${parseInt(price).toLocaleString()}`)
-          .style('left', (d3.event.pageX) + 'px')
-          .style('top', (d3.event.pageY - 28) + 'px');
-      })
-      .on('mouseout', d => {
-        // div.transition()
-        //     .duration(500)
-        //     .style('opacity', 0);
-      })
+      .on('mouseover', d => onTooltipHover(d, zipCodePricesByDate))
   }
 
   getPriceByZipCode(data) {
@@ -130,20 +154,44 @@ export default class extends Component {
       .await((error, prices, zips) => {
           const priceByZipCode = this.getPriceByZipCode(prices)
           this.renderMap(zips, priceByZipCode, date)
+          const dates = getDatesFromZipCodes(priceByZipCode)
+          this.setState({
+            dates,
+            priceByZipCode
+          })
       })
   }
 
-  render() {
+  onDateChange(date) {
     const { priceByZipCode } = this.state
-    // console.log('priceByZipCode', priceByZipCode)
+    const prices = getZipCodePricesFrom(priceByZipCode, date)
+    onTooltipOut()
+    updatePricesForDate(prices)
+  }
+
+  renderDates() {
+    const { dates } = this.state
+    if (dates && dates.length) {
+      return (
+        <select onChange={(event) => this.onDateChange(event.target.value)}>
+          { dates.map(item => (<option value={item} key={item}>{item}</option>))}
+        </select>
+      )
+    }
+    return null
+  }
+
+  render() {
     return (
       <div>
         <Head>
           <title>My page title</title>
         </Head>
-        <h1>Welcome to next.js!</h1>
+        <h1>Chicago House Prices</h1>
         <div id='data'></div>
+        {this.renderDates()}
         <svg></svg>
+        <div id="tooltip"></div>
       </div>
     )
   }
