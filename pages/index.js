@@ -2,6 +2,18 @@ import React, { Component } from 'react'
 import Head from 'next/head'
 import { expectedZipCodes } from '../config/base'
 
+const toolTipStyle = {
+  background: '#222',
+  border: '0px',
+  color: '#FFF',
+  font: '14px sans-serif',
+  fontWeight: 'bold',
+  padding: '5px',
+  pointerEvents: 'non',
+  position: 'absolute',
+  'text-align': 'center'
+}
+
 function getExpectedZipCodes(data = [], zipCodes = []) {
   const geometries = data.objects.data.geometries.filter(item => zipCodes.includes(item.properties.ZCTA5CE10))
   const newData = Object.assign({}, data)
@@ -10,22 +22,24 @@ function getExpectedZipCodes(data = [], zipCodes = []) {
 }
 
 function getZipCodePricesFrom(prices, date) {
-  const zipCodePricesByDate = {}
+  const pricesByDate = {}
   Object.keys(prices).forEach(zipCode => {
-    zipCodePricesByDate[zipCode] = prices[zipCode].find(item => item.date === date)
+    pricesByDate[zipCode] = prices[zipCode].find(item => item.date === date)
   })
-  return zipCodePricesByDate
+  return pricesByDate
 }
 
 function getPriceRange(pricesByDate) {
   const prices = [Infinity, 0]
   Object.keys(pricesByDate).forEach(zipCode => {
     const price = parseInt(pricesByDate[zipCode].price)
-    if (prices[0] > price) {
-      prices[0] = price
-    }
-    if (price > prices[1]) {
-      prices[1] = price
+    if (price) {
+      if (prices[0] > price) {
+        prices[0] = price
+      }
+      if (price > prices[1]) {
+        prices[1] = price
+      }
     }
   })
   return prices
@@ -43,36 +57,33 @@ function getColorRange(pricesByDate) {
         .range([d3.rgb("#8bace5"), d3.rgb('#f44646')])
 }
 
-function updatePricesForDate(pricesByDate) {
+function getFill(d, pricesByDate) {
   const colors = getColorRange(pricesByDate)
+  const zipCode = d.properties.ZCTA5CE10
+  const price = parseInt(pricesByDate[zipCode].price)
+  return price ? colors(price) : "#FFF"
+}
+
+function getStrokeWidth(d, pricesByDate) {
+  const priceRange = getPriceRange(pricesByDate)
+  const zipCode = d.properties.ZCTA5CE10
+  const price = parseInt(pricesByDate[zipCode].price)
+  return priceRange.includes(price) ? 0.05 : 0.01
+}
+
+function updatePricesForDate(pricesByDate) {
   d3
     .selectAll("path")
-    .attr("fill", d => {
-      const zipCode = d.properties.ZCTA5CE10
-      const price = pricesByDate[zipCode].price
-      return colors(pricesByDate[zipCode].price)
-    })
+    .attr("fill", d => getFill(d, pricesByDate))
+    .attr('stroke-width', d => getStrokeWidth(d, pricesByDate))
     .on('mouseover', d => onTooltipHover(d, pricesByDate))
 }
 
-function onTooltipHover(d, zipCodePricesByDate) {
+function onTooltipHover(d, pricesByDate) {
   const zipCode = d.properties.ZCTA5CE10
-  const price = zipCodePricesByDate[d.properties.ZCTA5CE10] ? zipCodePricesByDate[d.properties.ZCTA5CE10].price : 0
-
-  const toolTipStyle = {
-    background: '#222',
-    border: '0px',
-    color: '#FFF',
-    font: '14px sans-serif',
-    fontWeight: 'bold',
-    padding: '5px',
-    pointerEvents: 'non',
-    position: 'absolute'
-  }
-
+  const price = pricesByDate[d.properties.ZCTA5CE10].price
   const div = d3.select('#tooltip')
       .style('opacity', 0)
-      .style('text-align', 'center')
       .style(toolTipStyle)
 
   div.transition()
@@ -90,6 +101,11 @@ function onTooltipOut() {
     .style('opacity', 0);
 }
 
+function getFirstDate(zipCodePrices) {
+  const firstZipCode = Object.keys(zipCodePrices)[0]
+  return zipCodePrices[firstZipCode][0].date
+}
+
 export default class extends Component {
 
   constructor(props) {
@@ -99,11 +115,10 @@ export default class extends Component {
 
   renderMap(zipCodes = [], priceByZipCode = {}, date = '') {
     const newData = getExpectedZipCodes(zipCodes, expectedZipCodes)
-    const zipCodePricesByDate = getZipCodePricesFrom(priceByZipCode, date)
+    const pricesByDate = getZipCodePricesFrom(priceByZipCode, date)
 
     let svg = svg = d3.select('svg')
     const path = d3.geo.path()
-    const colors = getColorRange(zipCodePricesByDate)
 
     svg
       .attr('viewBox', '602 181 1 6')
@@ -114,14 +129,11 @@ export default class extends Component {
       .enter()
       .append('path')
       .attr('stroke', '#666')
-      .attr('stroke-width', 0.02)
-      .attr('fill', d => {
-        const price = zipCodePricesByDate[d.properties.ZCTA5CE10] ? zipCodePricesByDate[d.properties.ZCTA5CE10].price : 0
-        return colors(price)
-      })
+      .attr('stroke-width', d => getStrokeWidth(d, pricesByDate))
+      .attr("fill", d => getFill(d, pricesByDate))
       .attr('pointer-events', 'all')
       .attr('d', path)
-      .on('mouseover', d => onTooltipHover(d, zipCodePricesByDate))
+      .on('mouseover', d => onTooltipHover(d, pricesByDate))
   }
 
   getPriceByZipCode(data) {
@@ -147,15 +159,16 @@ export default class extends Component {
   }
 
   componentDidMount() {
-    const date = '2018-02-28'
     queue()
       .defer(d3.csv, '/static/1BD_Listing_Chicago_Zip.csv')
       .defer(d3.json, '/static/data.topo.json')
       .await((error, prices, zips) => {
           const priceByZipCode = this.getPriceByZipCode(prices)
+          const date = getFirstDate(priceByZipCode)
           this.renderMap(zips, priceByZipCode, date)
           const dates = getDatesFromZipCodes(priceByZipCode)
           this.setState({
+            date,
             dates,
             priceByZipCode
           })
@@ -167,6 +180,9 @@ export default class extends Component {
     const prices = getZipCodePricesFrom(priceByZipCode, date)
     onTooltipOut()
     updatePricesForDate(prices)
+    this.setState({
+      date
+    })
   }
 
   renderDates() {
@@ -182,14 +198,16 @@ export default class extends Component {
   }
 
   render() {
+    const { date } = this.state
     return (
       <div>
         <Head>
-          <title>My page title</title>
+          <title>Chicago House Prices</title>
         </Head>
-        <h1>Chicago House Prices</h1>
-        <div id='data'></div>
-        {this.renderDates()}
+        <h1>Chicago House Prices { date }</h1>
+        <div>
+          {this.renderDates()}
+        </div>
         <svg></svg>
         <div id="tooltip"></div>
       </div>
