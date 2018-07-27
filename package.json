@@ -6,8 +6,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "next",
-    "build": "next build",
-    "start": "next start"
+    "build": "next build && next export",
+    "start": "next start",
+    "deploy": "yarn build && gsutil -m rm -r gs://chicago-listings.mintitmedia.com/* && cd ./out && gsutil -m cp -r ./ gs://chicago-listings.mintitmedia.com/"
   },
   "dependencies": {
     "next": "^6.1.1",

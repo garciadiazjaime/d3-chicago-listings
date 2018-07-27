@@ -247,19 +247,24 @@ export default class extends Component {
   render() {
     const { date, priceByZipCode } = this.state
     return (
-      <div>
+      <div style={{
+        width: '1080px',
+        margin: '0 auto',
+        background: '#FFF',
+        padding: '12px'
+      }}>
         <Head>
           <title>Chicago House Prices (last 10 years)</title>
         </Head>
-        <h1>Chicago House Prices, <small>last 10 years.</small></h1>
+        <h1 style={{ margin: '0 0 15px 0' }}>Chicago House Prices, <small>last 10 years.</small></h1>
         <div style={{ display: 'flex', alignItems: 'center', margin: '0 0 15px 0' }}>
           <span style={mostAffordable} /> Most Affordable
           <span style={mostExpensive} /> Most Expensive
           {this.renderDates(date)}
         </div>
         <div>
-          <button onClick={this.onAnimationStartClickHanlder.bind(this)}>Start Animation</button>
-          <button onClick={this.onAnimationStopClickHanlder.bind(this)}>Stop Animation</button>
+          <button onClick={this.onAnimationStartClickHanlder.bind(this)} style={{ fontSize: '14px' }}>Start Animation</button>
+          <button onClick={this.onAnimationStopClickHanlder.bind(this)} style={{ fontSize: '14px' }}>Stop Animation</button>
         </div>
         <svg></svg>
         <div id="tooltip"></div>

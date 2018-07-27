@@ -15,7 +15,7 @@ export default class MyDocument extends Document {
           <script src="http://d3js.org/queue.v1.min.js"></script>
           <script src="https://unpkg.com/topojson-client@3"></script>
         </Head>
-        <body className="custom_class">
+        <body className="custom_class" style={{ margin: 0, background: '#EFFFFF' }}>
           <Main />
           <NextScript />
         </body>
