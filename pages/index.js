@@ -14,6 +14,23 @@ const toolTipStyle = {
   'text-align': 'center'
 }
 
+const baseMost = {
+  display: 'inline-block',
+  width: 15,
+  height: 15,
+  margin: 5
+}
+
+const mostAffordable = {
+  ...baseMost,
+  background: '#8bace5'
+}
+
+const mostExpensive = {
+  ...baseMost,
+  background: '#f44646'
+}
+
 function getExpectedZipCodes(data = [], zipCodes = []) {
   const geometries = data.objects.data.geometries.filter(item => zipCodes.includes(item.properties.ZCTA5CE10))
   const newData = Object.assign({}, data)
@@ -189,7 +206,7 @@ export default class extends Component {
     const { dates } = this.state
     if (dates && dates.length) {
       return (
-        <select onChange={(event) => this.onDateChange(event.target.value)}>
+        <select onChange={(event) => this.onDateChange(event.target.value)} style={{ margin: '0 0 0 15px' }}>
           { dates.map(item => (<option value={item} key={item}>{item}</option>))}
         </select>
       )
@@ -206,6 +223,8 @@ export default class extends Component {
         </Head>
         <h1>Chicago House Prices { date }</h1>
         <div>
+          <span style={mostAffordable} /> Most Affordable
+          <span style={mostExpensive} /> Most Expensive
           {this.renderDates()}
         </div>
         <svg></svg>
