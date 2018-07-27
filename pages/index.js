@@ -1,5 +1,35 @@
 import React, { Component } from 'react'
 import Head from 'next/head'
+import { expectedZipCodes } from '../config/base'
+
+function getExpectedZipCodes(data = [], zipCodes = []) {
+  const geometries = data.objects.data.geometries.filter(item => zipCodes.includes(item.properties.ZCTA5CE10))
+  const newData = Object.assign({}, data)
+  newData.objects.data.geometries = geometries
+  return newData
+}
+
+function getZipCodePricesFrom(prices, date) {
+  const zipCodePricesByDate = {}
+  Object.keys(prices).forEach(zipCode => {
+    zipCodePricesByDate[zipCode] = prices[zipCode].find(item => item.date === date)
+  })
+  return zipCodePricesByDate
+}
+
+function getPriceRange(pricesByDate) {
+  const prices = [Infinity, 0]
+  Object.keys(pricesByDate).forEach(zipCode => {
+    const price = parseInt(pricesByDate[zipCode].price)
+    if (prices[0] > price) {
+      prices[0] = price
+    }
+    if (price > prices[1]) {
+      prices[1] = price
+    }
+  })
+  return prices
+}
 
 export default class extends Component {
 
@@ -8,41 +38,12 @@ export default class extends Component {
     this.state = {}
   }
 
-  renderMap(data, priceByZipCode) {
+  renderMap(data = [], priceByZipCode = {}, date = '') {
+    const newData = getExpectedZipCodes(data, expectedZipCodes)
+    const zipCodePricesByDate = getZipCodePricesFrom(priceByZipCode, date)
+
     let svg = svg = d3.select('svg')
     const path = d3.geo.path()
-    const expectedZipCodes = [
-      '60622',
-      '60640',
-      '60611',
-      '60631',
-      '60657',
-      '60659',
-      '60605',
-      '60601',
-      '60614',
-      '60654',
-      '60625',
-      '60626',
-      '60661',
-      '60613',
-      '60615',
-      '60656',
-      '60630',
-      '60647',
-      '60610',
-      '60642',
-      '60634',
-      '60660',
-      '60618',
-      '60641',
-      '60645',
-      '60607',
-      '60606',
-      '60616',
-      '60201',
-      '60202'
-    ]
 
     const toolTipStyle = {
       position: 'absolute',
@@ -63,26 +64,30 @@ export default class extends Component {
       .style('opacity', 0)
       .style(toolTipStyle)
 
-    const geometries = data.objects.data.geometries.filter(item => expectedZipCodes.includes(item.properties.ZCTA5CE10))
-    const newData = Object.assign({}, data)
-    newData.objects.data.geometries = geometries
+    const colors = d3.scale.linear()
+        .domain(getPriceRange(zipCodePricesByDate))
+        .interpolate(d3.interpolateHcl)
+        .range([d3.rgb("#9bc4ea"), d3.rgb('#f29272')])
+
     svg
       .attr('viewBox', '602 181 1 6')
       .attr('width', 600)
       .attr('height', 600)
       .selectAll('path')
-      .data(topojson.feature(data, data.objects.data).features)
+      .data(topojson.feature(newData, newData.objects.data).features)
       .enter()
       .append('path')
       .attr('stroke', '#666')
       .attr('stroke-width', 0.02)
-      .attr('fill', 'red')
+      .attr('fill', d => {
+        const price = zipCodePricesByDate[d.properties.ZCTA5CE10] ? zipCodePricesByDate[d.properties.ZCTA5CE10].price : 0
+        return colors(price)
+      })
       .attr('pointer-events', 'all')
-      .attr('data-zip', d => d.properties.ZCTA5CE10)
       .attr('d', path)
-      .on('mouseover', (d) => {
-        const price = priceByZipCode[d.properties.ZCTA5CE10][0].price
+      .on('mouseover', d => {
         const zipCode = d.properties.ZCTA5CE10
+        const price = zipCodePricesByDate[d.properties.ZCTA5CE10] ? zipCodePricesByDate[d.properties.ZCTA5CE10].price : 0
         div.transition()
           .duration(200)
           .style('opacity', .9);
@@ -90,10 +95,10 @@ export default class extends Component {
           .style('left', (d3.event.pageX) + 'px')
           .style('top', (d3.event.pageY - 28) + 'px');
       })
-      .on('mouseout', (d) => {
-        div.transition()
-            .duration(500)
-            .style('opacity', 0);
+      .on('mouseout', d => {
+        // div.transition()
+        //     .duration(500)
+        //     .style('opacity', 0);
       })
   }
 
@@ -120,13 +125,13 @@ export default class extends Component {
   }
 
   componentDidMount() {
-    console.log('componentDidMount')
+    const date = '2018-02-28'
     queue()
       .defer(d3.csv, '/static/1BD_Listing_Chicago_Zip.csv')
       .defer(d3.json, '/static/data.topo.json')
       .await((error, prices, zips) => {
           const priceByZipCode = this.getPriceByZipCode(prices)
-          this.renderMap(zips, priceByZipCode)
+          this.renderMap(zips, priceByZipCode, date)
       })
   }
 
