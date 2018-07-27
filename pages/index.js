@@ -46,28 +46,26 @@ export default class extends Component {
     const path = d3.geo.path()
 
     const toolTipStyle = {
-      position: 'absolute',
-      textAlign: 'center',
-      width: '60px',
-      height: '28px',
-      padding: '2px',
-      font: '12px sans-serif',
-      background: 'lightsteelblue',
+      background: '#222',
       border: '0px',
-      borderRadius: '8px',
-      pointerEvents: 'non'
+      color: '#FFF',
+      font: '14px sans-serif',
+      fontWeight: 'bold',
+      padding: '5px',
+      pointerEvents: 'non',
+      position: 'absolute'
     }
 
     const div = d3.select('body')
       .append('div')
-      .attr('class', 'tooltip')
       .style('opacity', 0)
+      .style('text-align', 'center')
       .style(toolTipStyle)
 
     const colors = d3.scale.linear()
         .domain(getPriceRange(zipCodePricesByDate))
         .interpolate(d3.interpolateHcl)
-        .range([d3.rgb("#9bc4ea"), d3.rgb('#f29272')])
+        .range([d3.rgb("#8bace5"), d3.rgb('#f44646')])
 
     svg
       .attr('viewBox', '602 181 1 6')
@@ -90,8 +88,8 @@ export default class extends Component {
         const price = zipCodePricesByDate[d.properties.ZCTA5CE10] ? zipCodePricesByDate[d.properties.ZCTA5CE10].price : 0
         div.transition()
           .duration(200)
-          .style('opacity', .9);
-        div.html(`${zipCode} \n ${price}`)
+          .style('opacity', .8);
+        div.html(`${zipCode} <br /> $${parseInt(price).toLocaleString()}`)
           .style('left', (d3.event.pageX) + 'px')
           .style('top', (d3.event.pageY - 28) + 'px');
       })
