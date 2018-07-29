@@ -31,7 +31,7 @@ export default class extends Component {
   render() {
     const { zipCode } = this.props
     return (<div style={containerStyle}>
-      <h1>Historical prices for {zipCode}</h1>
+      <h1>Historical prices for {zipCode}, <small>last 10 years.</small></h1>
       <svg width="960" height="500"></svg>
       <div id="tooltip"></div>
     </div>)
