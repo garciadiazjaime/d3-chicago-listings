@@ -1,8 +1,16 @@
 import React, { Component } from 'react'
 import Head from 'next/head'
 import { expectedZipCodes } from '../config/base'
+import Router from 'next/router'
 
 let interval = null
+
+const containerStyle = {
+  width: '1080px',
+  margin: '0 auto',
+  background: '#FFF',
+  padding: '12px'
+}
 
 const toolTipStyle = {
   background: '#222',
@@ -73,14 +81,14 @@ function getColorRange(pricesByDate) {
   return d3.scale.linear()
         .domain(getPriceRange(pricesByDate))
         .interpolate(d3.interpolateHcl)
-        .range([d3.rgb("#8bace5"), d3.rgb('#f44646')])
+        .range([d3.rgb('#8bace5'), d3.rgb('#f44646')])
 }
 
 function getFill(d, pricesByDate) {
   const colors = getColorRange(pricesByDate)
   const zipCode = d.properties.ZCTA5CE10
   const price = parseInt(pricesByDate[zipCode].price)
-  return price ? colors(price) : "#FFF"
+  return price ? colors(price) : '#FFF'
 }
 
 function getStrokeWidth(d, pricesByDate) {
@@ -92,8 +100,8 @@ function getStrokeWidth(d, pricesByDate) {
 
 function updatePricesForDate(pricesByDate) {
   d3
-    .selectAll("path")
-    .attr("fill", d => getFill(d, pricesByDate))
+    .selectAll('path')
+    .attr('fill', d => getFill(d, pricesByDate))
     .attr('stroke-width', d => getStrokeWidth(d, pricesByDate))
     .on('mouseover', d => onTooltipHover(d, pricesByDate))
 }
@@ -160,10 +168,14 @@ export default class extends Component {
       .append('path')
       .attr('stroke', '#666')
       .attr('stroke-width', d => getStrokeWidth(d, pricesByDate))
-      .attr("fill", d => getFill(d, pricesByDate))
+      .attr('fill', d => getFill(d, pricesByDate))
       .attr('pointer-events', 'all')
       .attr('d', path)
       .on('mouseover', d => onTooltipHover(d, pricesByDate))
+      .on('click', d => {
+        const zipCode = d.properties.ZCTA5CE10
+        Router.push(`/zip-code?q=${zipCode}`)
+      })
   }
 
   getPriceByZipCode(data) {
@@ -247,12 +259,7 @@ export default class extends Component {
   render() {
     const { date, priceByZipCode } = this.state
     return (
-      <div style={{
-        width: '1080px',
-        margin: '0 auto',
-        background: '#FFF',
-        padding: '12px'
-      }}>
+      <div style={containerStyle}>
         <Head>
           <title>Chicago House Prices (last 10 years)</title>
         </Head>
