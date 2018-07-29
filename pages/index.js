@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
 import Head from 'next/head'
-import { expectedZipCodes } from '../config/base'
 import Router from 'next/router'
+import { expectedZipCodes } from '../config/base'
+import { getColorRange } from '../lib/d3'
 
 let interval = null
 
@@ -77,15 +78,9 @@ function getDatesFromZipCodes(zipCodes) {
   return zipCodes[firstKey].map(item => item.date)
 }
 
-function getColorRange(pricesByDate) {
-  return d3.scale.linear()
-        .domain(getPriceRange(pricesByDate))
-        .interpolate(d3.interpolateHcl)
-        .range([d3.rgb('#8bace5'), d3.rgb('#f44646')])
-}
-
 function getFill(d, pricesByDate) {
-  const colors = getColorRange(pricesByDate)
+  const priceRange = getPriceRange(pricesByDate)
+  const colors = getColorRange(priceRange)
   const zipCode = d.properties.ZCTA5CE10
   const price = parseInt(pricesByDate[zipCode].price)
   return price ? colors(price) : '#FFF'
