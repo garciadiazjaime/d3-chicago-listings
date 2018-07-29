@@ -55,6 +55,10 @@ class ZipCodePage extends Component {
       </div>
       <svg width="960" height="500"></svg>
       <div id="tooltip"></div>
+      <div>
+        <a href={`https://www.google.com/maps/place/Chicago,+IL+${zipCode}`} target="_blank">See in Google Maps</a> <br />
+        <a href={`https://www.trulia.com/for_sale/${zipCode}_zip/1p_beds/`} target="_blank">See Listings</a>
+      </div>
     </div>)
   }
 }
