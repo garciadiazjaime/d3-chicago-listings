@@ -1,34 +1,28 @@
 import React, { Component } from 'react'
-import Router from 'next/router'
 
 import { getPricesFor } from '../lib/place'
 import { renderHistoricalPrice } from '../lib/d3'
 import { mostAffordable, mostExpensive, priceRange, containerStyle } from '../styles/main'
 
-export default class extends Component {
+class ZipCodePage extends Component {
 
   constructor(props) {
     super(props)
     this.state = {}
   }
 
-  static getInitialProps ({ query }) {
-    return {
-      zipCode: query.q
-    }
-  }
-
   componentDidMount() {
     queue()
       .defer(d3.csv, '/static/1BD_Listing_Chicago_Zip.csv')
       .await((error, prices) => {
-        const { zipCode } = this.props
+        const zipCode = window.location.search.replace('?q=', '')
         const data = getPricesFor(prices, zipCode)
         renderHistoricalPrice(Object.entries(data))
         const zipCodes = prices.map(item => item['Zip Code']).filter(item => item)
         this.setState({
           prices,
-          zipCodes
+          zipCodes,
+          zipCode
         })
       })
   }
@@ -38,9 +32,8 @@ export default class extends Component {
   }
 
   renderZipCodes() {
-    const { zipCode } = this.props
-    const { zipCodes } = this.state
-    if (zipCodes && zipCodes.length) {
+    const { zipCode, zipCodes } = this.state
+    if (zipCode && zipCodes && zipCodes.length) {
       return (
         <select value={zipCode} onChange={(event) => this.onChangeHandler(event.target.value)}
           style={{ margin: '0 0 0 15px', fontSize: '20px' }}>
@@ -52,7 +45,7 @@ export default class extends Component {
   }
 
   render() {
-    const { zipCode } = this.props
+    const { zipCode } = this.state
     return (<div style={containerStyle}>
       <h1>Historical prices for {zipCode}, <small>last 10 years.</small></h1>
       <div style={priceRange}>
@@ -65,3 +58,5 @@ export default class extends Component {
     </div>)
   }
 }
+
+export default ZipCodePage
