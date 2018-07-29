@@ -2,13 +2,7 @@ import React, { Component } from 'react'
 
 import { getPricesFor } from '../lib/place'
 import { renderHistoricalPrice } from '../lib/d3'
-
-const containerStyle = {
-  width: '1080px',
-  margin: '0 auto',
-  background: '#FFF',
-  padding: '12px'
-}
+import { mostAffordable, mostExpensive, priceRange, containerStyle } from '../styles/main'
 
 export default class extends Component {
 
@@ -32,6 +26,10 @@ export default class extends Component {
     const { zipCode } = this.props
     return (<div style={containerStyle}>
       <h1>Historical prices for {zipCode}, <small>last 10 years.</small></h1>
+      <div style={priceRange}>
+        <span style={mostAffordable} /> Most Affordable
+        <span style={mostExpensive} /> Most Expensive
+      </div>
       <svg width="960" height="500"></svg>
       <div id="tooltip"></div>
     </div>)

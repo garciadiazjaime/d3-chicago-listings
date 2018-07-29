@@ -3,44 +3,9 @@ import Head from 'next/head'
 import Router from 'next/router'
 import { expectedZipCodes } from '../config/base'
 import { getColorRange } from '../lib/d3'
+import { mostAffordable, mostExpensive, priceRange, containerStyle, toolTipStyle } from '../styles/main'
 
 let interval = null
-
-const containerStyle = {
-  width: '1080px',
-  margin: '0 auto',
-  background: '#FFF',
-  padding: '12px'
-}
-
-const toolTipStyle = {
-  background: '#222',
-  border: '0px',
-  color: '#FFF',
-  font: '14px sans-serif',
-  fontWeight: 'bold',
-  padding: '5px',
-  pointerEvents: 'non',
-  position: 'absolute',
-  'text-align': 'center'
-}
-
-const baseMost = {
-  display: 'inline-block',
-  width: 15,
-  height: 15,
-  margin: 5
-}
-
-const mostAffordable = {
-  ...baseMost,
-  background: '#8bace5'
-}
-
-const mostExpensive = {
-  ...baseMost,
-  background: '#f44646'
-}
 
 function getExpectedZipCodes(data = [], zipCodes = []) {
   const geometries = data.objects.data.geometries.filter(item => zipCodes.includes(item.properties.ZCTA5CE10))
@@ -259,7 +224,7 @@ export default class extends Component {
           <title>Chicago House Prices (last 10 years)</title>
         </Head>
         <h1 style={{ margin: '0 0 15px 0' }}>Chicago House Prices, <small>last 10 years.</small></h1>
-        <div style={{ display: 'flex', alignItems: 'center', margin: '0 0 15px 0' }}>
+        <div style={priceRange}>
           <span style={mostAffordable} /> Most Affordable
           <span style={mostExpensive} /> Most Expensive
           {this.renderDates(date)}
