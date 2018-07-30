@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
+import Head from 'next/head'
 
 import { getPricesFor } from '../lib/place'
 import { renderHistoricalPrice } from '../lib/d3'
-import { mostAffordable, mostExpensive, priceRange, containerStyle } from '../styles/main'
+import { mostAffordable, mostExpensive, priceRange, containerStyle, titleStyle } from '../styles/main'
 
 class ZipCodePage extends Component {
 
@@ -47,7 +48,10 @@ class ZipCodePage extends Component {
   render() {
     const { zipCode } = this.state
     return (<div style={containerStyle}>
-      <h1>Historical prices for {zipCode}, <small>last 10 years.</small></h1>
+      <Head>
+        <title>Historical 1-Bedroom Apartment prices (last 10 years)</title>
+      </Head>
+      <h1 style={titleStyle}>Historical 1-Bedroom prices for {zipCode}, <small>last 10 years.</small></h1>
       <div style={priceRange}>
         <span style={mostAffordable} /> Most Affordable
         <span style={mostExpensive} /> Most Expensive

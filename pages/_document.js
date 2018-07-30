@@ -20,7 +20,7 @@ export default class MyDocument extends Document {
           <div style={containerStyle}>
             <nav>
               <a href="/">Home</a>&nbsp;
-              <a href="/about">About the Visualization</a>
+              <a href="/about">About</a>
             </nav>
           </div>
           <Main />

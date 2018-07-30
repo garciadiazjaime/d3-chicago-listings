@@ -39,3 +39,7 @@ export const mostExpensive = {
   ...baseMost,
   background: '#f44646'
 }
+
+export const titleStyle = {
+  margin: '0 0 15px 0'
+}

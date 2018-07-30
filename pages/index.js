@@ -3,7 +3,7 @@ import Head from 'next/head'
 import Router from 'next/router'
 import { expectedZipCodes } from '../config/base'
 import { getColorRange } from '../lib/d3'
-import { mostAffordable, mostExpensive, priceRange, containerStyle, toolTipStyle } from '../styles/main'
+import { mostAffordable, mostExpensive, priceRange, containerStyle, toolTipStyle, titleStyle } from '../styles/main'
 
 let interval = null
 
@@ -221,9 +221,9 @@ export default class extends Component {
     return (
       <div style={containerStyle}>
         <Head>
-          <title>Chicago House Prices (last 10 years)</title>
+          <title>Chicago 1-Bedroom Apartment Prices (last 10 years)</title>
         </Head>
-        <h1 style={{ margin: '0 0 15px 0' }}>Chicago House Prices, <small>last 10 years.</small></h1>
+        <h1 style={titleStyle}>Chicago 1-Bedroom Apartment Prices, <small>last 10 years.</small></h1>
         <div style={priceRange}>
           <span style={mostAffordable} /> Most Affordable
           <span style={mostExpensive} /> Most Expensive
@@ -235,6 +235,7 @@ export default class extends Component {
         </div>
         <svg></svg>
         <div id="tooltip"></div>
+        <div>Note: Click a zone to see more details.</div>
       </div>
     )
   }
